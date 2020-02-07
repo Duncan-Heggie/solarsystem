@@ -1,0 +1,63 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Gravityss : MonoBehaviour
+{
+    
+    public float InitialVel;
+    public float InitialVelSqr;
+    public float pos; //uses position of the planet to
+    const float G = 6.674e-4f; //used to speed up gravity process
+    const float G2 = 6.674e-4f * 330000f; //initialises mass of sun * G to then be used for v^2 equation
+
+    public static List<Gravityss> Planets; //make a list of attracting bodies
+
+    public Rigidbody rb;
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
+        pos = rb.position.magnitude; //gets the position of z in a vector form
+        InitialVelSqr = G2 / pos; //uses mass times G divided by r to get v^2
+        InitialVel = Mathf.Sqrt(InitialVelSqr); //calculates initial velocity
+        //vel = 200; a test that miraculously worked for the earth.
+        rb.AddForce(Vector3.forward * InitialVel); //add force a small force in the z direction in order to give it initial velocity.
+    }
+
+    void FixedUpdate()
+    {
+        Vector3 pos = rb.position; //creates a vector containing the position of a planet
+        float position = pos.magnitude; //finds the magnitude of that vector and converts it to a float
+        foreach (Gravityss planet in Planets) //this small for loop calls the attract function for each planet
+        {
+            if (planet != this)
+                Attract(planet);
+        }
+    }
+
+    void OnEnable() //speeds up the process  by only adding features to the list when necessary
+    {
+        if (Planets == null) //reduces redundancies by only adding planets to a list to be used if they are new planets
+            Planets = new List<Gravityss>();
+
+        Planets.Add(this);
+    }
+
+    private void OnDisable() //removes the planet from the list after it has been used
+    {
+        Planets.Remove(this);
+    }
+    void Attract (Gravityss PlanetToAttract)
+    {
+        Rigidbody rbToAttract = PlanetToAttract.rb; //considers the attracting planet as a rigidbody
+
+        Vector3 displacement = rb.position - rbToAttract.position; //calculates the displacement between planets
+        float seperation = displacement.magnitude; //calculates the seperation of planets
+
+        float ForceMagnitude = ((rb.mass * rbToAttract.mass) * G) / Mathf.Pow(seperation, 2); //calculates the magnitude of the gravity
+        //float acc = ForceMagnitude / rb.mass;
+
+        Vector3 force = displacement.normalized * ForceMagnitude; //converts the force into a vector
+        rbToAttract.AddForce(force); //adds the force vector
+    }
+}
